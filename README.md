@@ -6,22 +6,6 @@ This project was created primarily for **educational and learning purposes**.
 While it is well-structured and could technically be used in production, it is **not intended for commercialization**.  
 The main goal is to explore and demonstrate best practices, patterns, and technologies in software development.
 
-## Getting Started
-
-1. Clone the repository with `git clone "repository link"`
-2. Join to `virbooks-app` folder and execute: `npm install` or `yarn install` in the terminal
-3. Go to the previous folder and execute: `docker-compose -f dev.docker-compose.yml build --no-cache` in the terminal
-4. Once built, you must execute the command: `docker-compose -f dev.docker-compose.yml up --force-recreate` in the terminal
-
-NOTE: You have to be standing in the folder containing the: `dev.docker-compose.yml` and you need to install `Docker Desktop` if you are in Windows.
-
-### Pre-Commit for Development (Python)
-
-NOTE: Install **pre-commit** inside: `virbooks-api` folder.
-
-1. Once you're inside the virtual environment, let's install the hooks specified in the pre-commit. Execute: `pre-commit install`
-2. Now every time you try to commit, the pre-commit lint will run. If you want to do it manually, you can run the command: `pre-commit run --all-files`
-
 ## Description
 
 **Virbooks** is a full-stack bookstore management application that lets users catalog, browse, and manage a personal book collection through a clean, responsive web interface.
@@ -31,16 +15,6 @@ NOTE: Install **pre-commit** inside: `virbooks-api` folder.
 The application provides a single-page interface where users can add new books to their collection by filling out a form with the book's title, author, genre, description, and a cover image URL. Every book added is immediately persisted to a MongoDB database and displayed on the main page alongside the rest of the collection. Books can be removed at any time via a delete action directly from the book card.
 
 The collection can be filtered by genre: the interface exposes a filter menu populated dynamically from the genres already present in the database, so the list of available filters always reflects the actual state of the collection without any manual configuration.
-
-### Architecture overview
-
-The frontend is a React 19 + TypeScript SPA bundled with Vite. It communicates exclusively with the backend through a versioned REST API (`/api/v1/books/`). In development, Vite's proxy forwards those requests to the Flask server, so no CORS configuration is needed. In production, Nginx serves the static build and acts as a reverse proxy to the Gunicorn/Flask process.
-
-The backend is a Flask 3 application structured in clear layers: blueprints handle routing, controllers parse requests and build responses, services contain the business logic (including duplicate-book detection before insertion), and data access objects (DAOs) execute all PyMongo queries. Input validation is handled by Pydantic v2 models, and a centralized decorator catches both Pydantic `ValidationError` and PyMongo errors, mapping them to structured JSON error responses with appropriate HTTP status codes.
-
-Data is stored in MongoDB. Each book document holds title, author, genre, description, and image. The DAO layer serializes MongoDB's `ObjectId` to a plain string before returning data to the client, keeping the API transport format clean and predictable.
-
-The entire stack runs in Docker via a single Compose file for development. A separate test Compose file spins up an isolated MongoDB instance on a different port exclusively for the test suite, ensuring the development database is never touched during testing.
 
 ## Technologies used
 
@@ -137,76 +111,28 @@ pytest-timeout==2.3.1
 pytest-xdist==3.5.0
 ```
 
-## Portfolio Link
+## Getting Started
 
-[`https://www.diegolibonati.com.ar/#/project/virbooks`](https://www.diegolibonati.com.ar/#/project/virbooks)
+With the stack and dependencies in mind, here's how to bring the project up locally.
 
-## Testing
+1. Clone the repository with `git clone "repository link"`
+2. Join to `virbooks-app` folder and execute: `npm install` or `yarn install` in the terminal
+3. Copy each `.env.example` to `.env` (root, `virbooks-app/`, and `virbooks-api/`) and fill in the values described in the [Env Keys](#env-keys) section. Without this step the containers will not pick up the right configuration.
+4. Go to the previous folder and execute: `docker-compose -f dev.docker-compose.yml build --no-cache` in the terminal
+5. Once built, you must execute the command: `docker-compose -f dev.docker-compose.yml up --force-recreate` in the terminal
 
-### Frontend
+NOTE: You have to be standing in the folder containing the: `dev.docker-compose.yml` and you need to install `Docker Desktop` if you are in Windows.
 
-1. Navigate to the project folder
-2. Execute: `npm test`
+### Pre-Commit for Development (Python)
 
-For coverage report:
+NOTE: Install **pre-commit** inside: `virbooks-api` folder.
 
-```bash
-npm run test:coverage
-```
+1. Once you're inside the virtual environment, let's install the hooks specified in the pre-commit. Execute: `pre-commit install`
+2. Now every time you try to commit, the pre-commit lint will run. If you want to do it manually, you can run the command: `pre-commit run --all-files`
 
-### Backend
+## Env Keys
 
-1. Join to the correct path of the clone and join to: `virbooks-api`
-2. Execute: `python -m venv venv`
-3. Execute in Windows: `venv\Scripts\activate`
-4. Execute: `pip install -r requirements.txt`
-5. Execute: `pip install -r requirements.test.txt`
-6. Execute: `pytest --log-cli-level=INFO`
-
-## Security Audit (Python)
-
-You can check your dependencies for known vulnerabilities using **pip-audit**.
-
-1. Go to the repository folder
-2. Activate your virtual environment
-3. Execute: `pip install -r requirements.dev.txt`
-4. Execute: `pip-audit -r requirements.txt`
-
-## Security Audit (Frontend)
-
-### npm audit
-
-Check for vulnerabilities in dependencies:
-
-```bash
-npm audit
-```
-
-### React Doctor (Frontend)
-
-Run a health check on the project (security, performance, dead code, architecture):
-
-```bash
-npm run doctor
-```
-
-Use `--verbose` to see specific files and line numbers:
-
-```bash
-npm run doctor -- --verbose
-```
-
-## Documentation API
-
-### **Version**
-
-```ts
-APP VERSION: 0.0.1
-README UPDATED: 01/02/2026
-AUTHOR: Diego Libonati
-```
-
-### **Env Keys**
+The setup steps above reference these variables. Each one is consumed either by the frontend (Vite) or the backend (Flask + PyMongo) at startup.
 
 1. `TZ`: Refers to the timezone setting for the container.
 2. `VITE_API_URL`: Refers to the base URL of the backend API the frontend consumes.
@@ -239,7 +165,19 @@ HOST=0.0.0.0
 PORT=5050
 ```
 
-### **Virbooks Endpoints API**
+## Architecture & Design Patterns
+
+With the project running and configured, this is how the pieces fit together internally.
+
+The frontend is a React 19 + TypeScript SPA bundled with Vite. It communicates exclusively with the backend through a versioned REST API (`/api/v1/books/`). In development, Vite's proxy forwards those requests to the Flask server, so no CORS configuration is needed. In production, Nginx serves the static build and acts as a reverse proxy to the Gunicorn/Flask process.
+
+The backend is a Flask 3 application structured in clear layers: blueprints handle routing, controllers parse requests and build responses, services contain the business logic (including duplicate-book detection before insertion), and data access objects (DAOs) execute all PyMongo queries. Input validation is handled by Pydantic v2 models, and a centralized decorator catches both Pydantic `ValidationError` and PyMongo errors, mapping them to structured JSON error responses with appropriate HTTP status codes.
+
+Data is stored in MongoDB. Each book document holds title, author, genre, description, and image. The DAO layer serializes MongoDB's `ObjectId` to a plain string before returning data to the client, keeping the API transport format clean and predictable.
+
+The entire stack runs in Docker via a single Compose file for development. A separate test Compose file spins up an isolated MongoDB instance on a different port exclusively for the test suite, ensuring the development database is never touched during testing.
+
+### Virbooks Endpoints API
 
 ---
 
@@ -305,7 +243,75 @@ PORT=5050
 
 ---
 
+## Testing
+
+### Frontend
+
+1. Navigate to the project folder
+2. Execute: `npm test`
+
+For coverage report:
+
+```bash
+npm run test:coverage
+```
+
+### Backend
+
+1. Join to the correct path of the clone and join to: `virbooks-api`
+2. Execute: `python -m venv venv`
+3. Execute in Windows: `venv\Scripts\activate`
+4. Execute: `pip install -r requirements.txt`
+5. Execute: `pip install -r requirements.test.txt`
+6. Execute: `pytest --log-cli-level=INFO`
+
+## Security Audit
+
+Beyond running the test suite, both sides of the stack ship with tools to scan dependencies for known vulnerabilities.
+
+### Backend (Python)
+
+You can check your dependencies for known vulnerabilities using **pip-audit**.
+
+1. Go to the repository folder
+2. Activate your virtual environment
+3. Execute: `pip install -r requirements.dev.txt`
+4. Execute: `pip-audit -r requirements.txt`
+
+### Frontend
+
+#### npm audit
+
+Check for vulnerabilities in dependencies:
+
+```bash
+npm audit
+```
+
+#### React Doctor
+
+Run a health check on the project (security, performance, dead code, architecture):
+
+```bash
+npm run doctor
+```
+
+Use `--verbose` to see specific files and line numbers:
+
+```bash
+npm run doctor -- --verbose
+```
+
 ## Known Issues
 
 None at the moment.
 
+## Portfolio Link
+
+```ts
+APP VERSION: 0.0.1
+README UPDATED: 10/05/2026
+AUTHOR: Diego Libonati
+```
+
+[`https://www.diegolibonati.com.ar/#/project/virbooks`](https://www.diegolibonati.com.ar/#/project/virbooks)
